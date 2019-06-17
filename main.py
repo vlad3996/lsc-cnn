@@ -625,8 +625,6 @@ def test_lsccnn(test_funcs, dataset, set_name, network, print_output=False, thre
     e = dataset.iterate_over_test_data(test_function, set_name)
 
     for e_idx, e_iter in enumerate(e):
-        if e_idx > 1:
-            break
         image_split = e_iter[1].split('/')
         image_name = image_split[len(image_split)-1]
         image = cv2.imread(e_iter[1])
@@ -870,8 +868,6 @@ def pretrain_networks(network, dataset, network_functions, log_path):
         
         # b_i - batch index
         for b_i in range(num_batches_per_epoch):
-            if b_i > 1:
-                break
             # Generate next training sample
             Xs, Ys, _ = dataset.train_get_batch()
             losses, hist_boxes, hist_boxes_gt = train_funcs[0](Xs, Ys, hist_boxes, hist_boxes_gt, loss_weights, network)
