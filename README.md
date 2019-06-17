@@ -83,7 +83,7 @@ Run the following code to dump the dataset for `lsc-cnn`
 
 ### For testing on Part-B
 
-`python main.py --dataset="partb" --gpu=2 --skip-init-tests --start-epoch=24 --epochs=24 --threshold=0.30`
+`python main.py --dataset="partb" --gpu=2 --skip-init-tests --start-epoch=24 --epochs=24 --threshold=0.25`
 
 ### For testing on QNRF
 
