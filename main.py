@@ -71,6 +71,8 @@ parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float,
                     metavar='LR', help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float,
                      metavar='M', help='momentum')
+parser.add_argument('--threshold', default=-1.0, type=float,
+                      metavar='M', help='fixed threshold to do NMS')
 parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float, metavar='W',
                     help='weight decay (default: 1e-4)')
 parser.add_argument('--mle', action='store_true',
@@ -892,7 +894,7 @@ def pretrain_networks(network, dataset, network_functions, log_path):
             HIST_GT = np.reshape(HIST_GT, (4, 4))
             loss_weights = compute_box_weights(HIST_GT)
             np.save('loss_weights.npy', loss_weights)
-            print("Saving loss weights!!")
+            print("Saving loss weights!! PLEASE re-run the code for training/testing")
             exit()
 
         # -- Stats update
@@ -963,9 +965,11 @@ def pretrain_networks(network, dataset, network_functions, log_path):
             plt.close()
 
     # -- Finding best NMS Threshold
-    threshold = find_class_threshold(f, 1, test_funcs, network)
-    log(f, "Best Threshold is", threshold)
-
+    if args.threshold == -1:
+        threshold = find_class_threshold(f, 1, test_funcs, network)
+        log(f, "Best Threshold is", threshold)
+    else:
+        threshold = args.threshold
     # Test the latest model and the best model
     try:
         min_epoch = np.argmin(map(sum, valid_losses['mae']))
@@ -974,7 +978,7 @@ def pretrain_networks(network, dataset, network_functions, log_path):
     except:
         pass
     log(f, '\nTesting ...')
-    _, txt = test_lsccnn(test_funcs, dataset, 'test', network, './models/dump_test', thresh=0.25)
+    _, txt = test_lsccnn(test_funcs, dataset, 'test', network, './models/dump_test', thresh=threshold)
     log(f, 'TEST epoch: ' + str(num_epochs - 1) + ' ' + txt)
     log(f, 'Exiting pretrain...')
     f.close()
