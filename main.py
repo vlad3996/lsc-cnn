@@ -26,30 +26,43 @@ from network import LSCCNN
 from utils.logging_tools import *
 from utils.loss_weights import *
 
-# -- Global Config Vars
 
-IMG_DOWNSCALE_FACTORS_1 = (8, 4, 2, 1) # Denotes scales - 1/8, 1/4, 1/2 and 1x wrt prediction scale.
-GAMMA = [1, 1, 2, 4]     # Gaps between the boxes as mentioned in the paper.
+################ Architecture Hyper-parameters ################
+# PRED_DOWNSCALE_FACTORS is the set of integer factors indicating how much to 
+# downscale the dimensions of the ground truth prediction for each scale output. 
+# Note that the data reader under default settings creates prediction maps at 
+# one-half resolution (wrt input sizes) and hence PRED_DOWNSCALE_FACTORS = 
+# (8, 4, 2, 1) translates to 1/16, 1/8, 1/4 and 1/2 prediction sizes (s={0,1,2,3}).
+PRED_DOWNSCALE_FACTORS = (8, 4, 2, 1)
+
+# Size increments for the box sizes (\gamma) as mentioned in the paper.
+GAMMA = [1, 1, 2, 4]
+
+# Number of predefined boxes per scales (n_{mathcal{B}}).
+NUM_BOXES_PER_SCALE = 3
+###############################################################
+
+
+# ---- Computing predefined box sizes and global variables
 BOX_SIZE_BINS = [1]
 BOX_IDX = [0]
-NUM_CHANNELS = 3
 g_idx = 0
-# Code to automate the box sizes of each scale.
-while len(BOX_SIZE_BINS) < NUM_CHANNELS * len(IMG_DOWNSCALE_FACTORS_1):
+while len(BOX_SIZE_BINS) < NUM_BOXES_PER_SCALE * len(PRED_DOWNSCALE_FACTORS):
     gamma_idx = len(BOX_SIZE_BINS) // (len(GAMMA)-1)
     box_size = BOX_SIZE_BINS[g_idx] + GAMMA[gamma_idx]
-    box_idx = gamma_idx*(NUM_CHANNELS+1) + (len(BOX_SIZE_BINS) % (len(GAMMA)-1))
+    box_idx = gamma_idx*(NUM_BOXES_PER_SCALE+1) + (len(BOX_SIZE_BINS) % (len(GAMMA)-1))
     BOX_IDX.append(box_idx)
     BOX_SIZE_BINS.append(box_size)
     g_idx += 1
-
 BOX_INDEX = dict(zip(BOX_SIZE_BINS, BOX_IDX))
-SCALE_BINS_ON_BOX_SIZE_BINS = [3, 6, 9, 12]
+SCALE_BINS_ON_BOX_SIZE_BINS = [NUM_BOXES_PER_SCALE * (s + 1) \
+                               for s in range(len(GAMMA))]
 BOX_SIZE_BINS_NPY = np.array(BOX_SIZE_BINS)
 BOXES = np.reshape(BOX_SIZE_BINS_NPY, (4, 3))
 BOXES = BOXES[::-1]
 metrics = ['loss1', 'new_mae']
 # ----
+
 
 matplotlib.use('Agg')
 parser = argparse.ArgumentParser(description='PyTorch LSC-CNN Training')
@@ -113,7 +126,7 @@ class networkFunctions():
             Yss_out.append(w_map)
         assert(len(Yss_out) == 4)
         # Get largest spatial gt
-        yss_np = Yss[0].cpu().data.numpy()  ##? CHECK CORRECTNESS
+        yss_np = Yss[0].cpu().data.numpy()
         gt_ref_map = yss_np  # (B, 1, h, w)
         # For every gt patch from the gt_ref_map
         for b in range(0, gt_ref_map.shape[0]):
@@ -142,8 +155,8 @@ class networkFunctions():
                     # find box index in the scale
                     sel_box_inds = box_inds[scale_sel_inds]
                     scale_box_inds = sel_box_inds % 3 
-                    heads_y = y_idx[scale_sel_inds] // IMG_DOWNSCALE_FACTORS_1[3-i]
-                    heads_x = x_idx[scale_sel_inds] // IMG_DOWNSCALE_FACTORS_1[3-i]
+                    heads_y = y_idx[scale_sel_inds] // PRED_DOWNSCALE_FACTORS[3-i]
+                    heads_x = x_idx[scale_sel_inds] // PRED_DOWNSCALE_FACTORS[3-i]
                     
                     Yss_out[i][b, scale_box_inds, heads_y, heads_x] = BOX_SIZE_BINS_NPY[sel_box_inds]
                     Yss_out[i][b, 3, heads_y, heads_x] = 0
@@ -165,10 +178,10 @@ class networkFunctions():
     '''
         This function upsamples given tensor by a factor but make sures there is no repetition
         of values. Basically when upsampling by a factor of 2, there are 3 new places created. This fn.
-        instead of repeating the values, marks them 0.
+        instead of repeating the values, marks them 1.
 
         Caveat :  this function currently supports upsample by factor=2 only. For power of 2, use it
-        multiple times. This doesn't support factors other then powers of 2
+        multiple times. This doesn't support factors other than powers of 2
 
         Input - input (torch tensor) - A binary map denoting where the head is present. (Bx4xHxW)
                 factor (int) - factor by which you need to upsample
@@ -201,7 +214,9 @@ class networkFunctions():
         return output
 
     '''
-        This function divides the pred and gt into grids and calculates loss on each grid and returns the maximum of the losses.
+        This function implements the GWTA loss in which it
+        divides the pred and gt into grids and calculates 
+        loss on each grid and returns the maximum of the losses.
 
         input : pred (torch.cuda.FloatTensor) - Bx4xHxW - prediction from the network
                 gt (torch.cuda.FloatTensor) - BxHxW   - Ground truth points
@@ -256,14 +271,13 @@ class networkFunctions():
             
             Parameters
             -----------
-            Xs - (list of ndarray) Actually consists of same image 
-                 in the list, so indexing 1 in the function.
-            Ys - (list of ndarray) Ground truth of each scale
+            Xs - (ndarray) Batched images
+            Ys - (ndarray) Batched Ground truth of largest scale
             Returns
             ---------
             losses: (list of float) list of loss values of each scale.
             hist_boxes: (list) histogram of boxes of predictions
-            hist_boxes_gt: (list) histogram of boxes of gt/
+            hist_boxes_gt: (list) histogram of boxes of gt.
         '''
 
         def train_function(Xs, Ys, hist_boxes, hist_boxes_gt, loss_weights, network):
@@ -311,7 +325,7 @@ class networkFunctions():
             loss = 0.0
             '''
                 GWTA Loss
-        '''
+            '''
             for idx, (m, out, yss) in enumerate(zip([m_1, m_2, m_3, m_4], outputs, Yss_argmax)):
                 if idx != 0:
                     loss_ = self.gwta_loss(out, yss, m, grid_factor=np.power(2, idx))
@@ -459,7 +473,7 @@ def load_model(net, dont_load=[]):
         cfg['conv_scale1_2'] = 'conv2_2'
 
         print ('loading model ', net.name)
-        base_dir = "../../imagenet_vgg_weights/"
+        base_dir = "../imagenet_vgg_weights/"
         layer_copy_count = 0
         for layer in cfg.keys():
             if layer in dont_load:
@@ -488,7 +502,7 @@ def load_model(net, dont_load=[]):
         print ('Done.')
 
 '''
-    Function to get localization error (alaias offset error)
+    Function to get localization error (alias offset error)
     Parameters
     -----------
         x_pred: (list) list of x-coordinates of prediction
@@ -690,16 +704,16 @@ def calculate_metrics(pred, true, metrics_test):
 
     Parameters
     ---------- 
-    	f: (file object) file writer
-    	iters: Number of iterations to run the binary search
-    	test_funcs: lsccnn test function
-    	splits: number of splits to the range of thresholds
-    	beg: beginning threshold
-    	end: ending threshold
+        f: (file object) file writer
+        iters: Number of iterations to run the binary search
+        test_funcs: lsccnn test function
+        splits: number of splits to the range of thresholds
+        beg: beginning threshold
+        end: ending threshold
     Returns
     ----------
         optimal_threshold: optimal threshold where the mae is 
-        				   lowest on validation set.
+                           lowest on validation set.
 '''
 
 def find_class_threshold(f, iters, test_funcs, network, splits=10, beg=0.0, end=0.3):
@@ -801,7 +815,7 @@ def get_box_and_dot_maps(pred, thresh):
     metrics and statistics of training/validation/testing stages.
 '''
 
-def pretrain_networks(network, dataset, network_functions, log_path):
+def train_networks(network, dataset, network_functions, log_path):
     snapshot_path = os.path.join(log_path, 'snapshots')
     f = open(os.path.join(log_path, 'train0.log'), 'w')
 
@@ -846,11 +860,11 @@ def pretrain_networks(network, dataset, network_functions, log_path):
             train_losses[metric] = train_losses[metric][:start_epoch]
         
         network, _= load_net(network,
-                                                             network_functions, 0,
-                                                             snapshot_path, 
-                                                             get_filename(\
-                                                             network.name,
-                                                             start_epoch))
+                             network_functions, 0,
+                             snapshot_path, 
+                             get_filename(\
+                             network.name,
+                             start_epoch))
 
     # -- Main Training Loop
     if os.path.isfile("loss_weights.npy"):
@@ -860,9 +874,6 @@ def pretrain_networks(network, dataset, network_functions, log_path):
     HIST_GT = []
     for e_i, epoch in enumerate(range(start_epoch, num_epochs)):
         avg_loss = [0.0 for _ in range(1)]
-        avg_maxima_split_spp = [0.0 for _ in range(1)]
-        avg_maxima_split_overlap = [0.0 for _ in range(1)]
-        avg_maxima_split = [0.0 for _ in range(1)]
         hist_boxes = np.zeros((16,))
         hist_boxes_gt = np.zeros((16,))
         
@@ -895,9 +906,6 @@ def pretrain_networks(network, dataset, network_functions, log_path):
 
         # -- Stats update
         avg_loss = [al / num_batches_per_epoch for al in avg_loss]
-        avg_maxima_split_spp = [ams / num_batches_per_epoch for ams in avg_maxima_split_spp]
-        avg_maxima_split_overlap = [ams / num_batches_per_epoch for ams in avg_maxima_split_overlap]
-        avg_maxima_split = [ams / num_batches_per_epoch for ams in avg_maxima_split]
         avg_loss = [av for av in avg_loss]
 
         train_losses['loss1'].append(avg_loss)
@@ -976,14 +984,14 @@ def pretrain_networks(network, dataset, network_functions, log_path):
     log(f, '\nTesting ...')
     _, txt = test_lsccnn(test_funcs, dataset, 'test', network, './models/dump_test', thresh=threshold)
     log(f, 'TEST epoch: ' + str(num_epochs - 1) + ' ' + txt)
-    log(f, 'Exiting pretrain...')
+    log(f, 'Exiting train...')
     f.close()
     return
 
 
 """
     This method dumps dataset (if not created yet) and calls
-    `pretrain_networks` which consists of training, validation
+    `train_networks` which consists of training, validation
     and testing steps.
     Basically, this is a wrapper around the main training stage.
 """
@@ -1017,10 +1025,10 @@ def train():
         os.makedirs(model_save_path)
         os.makedirs(os.path.join(model_save_path, 'snapshots'))
 
-    pretrain_networks(network=network, 
-                      dataset=dataset, 
-                      network_functions=networkFunctions(),
-                      log_path=model_save_path)
+    train_networks(network=network, 
+                   dataset=dataset, 
+                   network_functions=networkFunctions(),
+                   log_path=model_save_path)
 
     print('\n-------\nDONE.')
 
@@ -1080,3 +1088,4 @@ if __name__ == '__main__':
     
     # -- Train the model
     train()
+

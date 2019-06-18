@@ -56,6 +56,8 @@ For evaluating on any pretrained model, place the corresponding `models` from th
 
 Download `models` folders to `lsc-cnn`.
 
+Download Imagenet pretrained VGG weights from [here](https://drive.google.com/open?id=1hlJg4ux_BI3z_8zRdwwE7oQoumzSYIEg) (Download the `imagenet_vgg_weights` folder) and place it in the parent directory of `lsc-cnn`.
+
 ## Preparing the Dataset
 Run the following code to dump the dataset for `lsc-cnn`
 
