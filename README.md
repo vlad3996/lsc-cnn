@@ -118,6 +118,9 @@ This generates an `error_function.so` file in the `./lsc-cnn` directory which is
 
 # Test Outputs
 Test outputs consist of box predictions for validation set at `models/dump` and that of the test set at `models/dump_test`.
+<<<<<<< HEAD
 
 ## Contact
 For further queries, please mail at `pvskand <at> gmail <dot> com`.
+=======
+>>>>>>> a3cc2f70b3fb79846adb0ba217953718a336bdb7

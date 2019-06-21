@@ -40,9 +40,12 @@ GAMMA = [1, 1, 2, 4]
 
 # Number of predefined boxes per scales (n_{mathcal{B}}).
 NUM_BOXES_PER_SCALE = 3
+<<<<<<< HEAD
 
 # Loss Weights (to be read from .npy file while training)
 loss_weights = None
+=======
+>>>>>>> a3cc2f70b3fb79846adb0ba217953718a336bdb7
 ###############################################################
 
 
