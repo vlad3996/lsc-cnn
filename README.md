@@ -1,7 +1,16 @@
 # LSC-CNN
 
-This repository is the pytorch implementation for the crowd counting model, LSC-CNN, proposed in the paper - **Locate, Size and Count: Accurately Resolving People in Dense Crowds via Detection**.
+This repository is the pytorch implementation for the crowd counting model, LSC-CNN, proposed in the paper - [**Locate, Size and Count: Accurately Resolving People in Dense Crowds via Detection**](https://arxiv.org/pdf/1906.07538.pdf).
 
+If you find this work useful in your research, please consider citing the paper:
+```
+@article{LSCCNN19,
+    Author = {Sam, Deepak Babu and Peri, Skand Vishwanath and Mukuntha .N .S ,  and Kamath, Amogh and Babu, R. Venkatesh},
+    Title = {Locate, Size and Count: Accurately Resolving People in Dense Crowds via Detection},
+    Journal = {arXiv:1906.07538},
+    Year = {2019}
+}
+```
 # Requirements
 We strongly recommend to run the codes in NVidia-Docker. Install both `docker` and `nvidia-docker` (please find instructions from their respective installation pages).
 After the docker installations, pull pytorch docker image with the following command:
@@ -56,6 +65,8 @@ For evaluating on any pretrained model, place the corresponding `models` from th
 
 Download `models` folders to `lsc-cnn`.
 
+Download Imagenet pretrained VGG weights from [here](https://drive.google.com/open?id=1hlJg4ux_BI3z_8zRdwwE7oQoumzSYIEg) (Download the `imagenet_vgg_weights` folder) and place it in the parent directory of `lsc-cnn`.
+
 ## Preparing the Dataset
 Run the following code to dump the dataset for `lsc-cnn`
 
@@ -83,7 +94,7 @@ Run the following code to dump the dataset for `lsc-cnn`
 
 ### For testing on Part-B
 
-`python main.py --dataset="partb" --gpu=2 --skip-init-tests --start-epoch=24 --epochs=24 --threshold=0.30`
+`python main.py --dataset="partb" --gpu=2 --skip-init-tests --start-epoch=24 --epochs=24 --threshold=0.25`
 
 ### For testing on QNRF
 
@@ -107,3 +118,6 @@ This generates an `error_function.so` file in the `./lsc-cnn` directory which is
 
 # Test Outputs
 Test outputs consist of box predictions for validation set at `models/dump` and that of the test set at `models/dump_test`.
+
+## Contact
+For further queries, please mail at `pvskand <at> gmail <dot> com`.
