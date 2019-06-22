@@ -622,7 +622,7 @@ def test_lsccnn(test_funcs, dataset, set_name, network, print_output=False, thre
     metrics_ = ['new_mae', 'mle', 'mse', 'loss1']
     for k in metrics_:
         metrics_test[k] = 0.0
-    loss_weights = np.ones((PRED_DOWNSCALE_FACTORS, NUM_BOXES_PER_SCALE+1))
+    loss_weights = np.ones((len(PRED_DOWNSCALE_FACTORS), NUM_BOXES_PER_SCALE+1))
     def test_function(img_batch, gt_batch, roi_batch):
         global test_loss
         global counter
@@ -1060,7 +1060,7 @@ if __name__ == '__main__':
                                '../dataset/ST_partA/test_data/ground_truth'],
                          'train': ['../dataset/ST_partA/train_data/images',
                                 '../dataset/ST_partA/train_data/ground_truth']}
-        validation_set = 0
+        validation_set = 30
 
         path = '../dataset/stparta_dotmaps_predscale0.5_rgb_ddcnn++_test_val_30'
         output_downscale = 2
@@ -1071,7 +1071,7 @@ if __name__ == '__main__':
                                 '../dataset/ST_partA/train_data/ground_truth']}
         validation_set = 80
         output_downscale = 2
-        # path = '../dataset/stpartb_dotmaps_predictionScale_'+str(output_downscale)
+
         path = "../dataset/stpartb_dotmaps_predscale0.5_rgb_ddcnn++_test/"
     elif args.dataset == "ucfqnrf":
         dataset_paths = {'test': ['../dataset/UCF-QNRF_ECCV18/Test/images',
