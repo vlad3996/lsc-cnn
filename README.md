@@ -98,7 +98,7 @@ Run the following code to dump the dataset for `lsc-cnn`
 
 ### For testing on QNRF
 
-`python main.py --dataset="qnrf" --gpu=2 --start-epoch=4613 --epochs=46 --threshold=0.20`
+`python main.py --dataset="qnrf" --gpu=2 --start-epoch=46 --epochs=46 --threshold=0.20`
 
 - All the metrics are displayed once the above code completes its run.
 
