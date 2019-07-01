@@ -90,15 +90,15 @@ Run the following code to dump the dataset for `lsc-cnn`
 ## Testing
 ### For testing on Part-A
 
-`python main.py --dataset="parta" --gpu=2 --skip-init-tests --start-epoch=13 --epochs=13 --threshold=0.21`
+`python main.py --dataset="parta" --gpu=2 --start-epoch=13 --epochs=13 --threshold=0.21`
 
 ### For testing on Part-B
 
-`python main.py --dataset="partb" --gpu=2 --skip-init-tests --start-epoch=24 --epochs=24 --threshold=0.25`
+`python main.py --dataset="partb" --gpu=2 --start-epoch=24 --epochs=24 --threshold=0.25`
 
 ### For testing on QNRF
 
-`python main.py --dataset="qnrf" --gpu=2 --skip-init-tests --start-epoch=4613 --epochs=46 --threshold=0.20`
+`python main.py --dataset="qnrf" --gpu=2 --start-epoch=4613 --epochs=46 --threshold=0.20`
 
 - All the metrics are displayed once the above code completes its run.
 
@@ -107,7 +107,7 @@ Run the following code to dump the dataset for `lsc-cnn`
 For example:
 
 
-`python main.py --dataset="parta" --gpu=2 --skip-init-tests --start-epoch=13 --epochs=13`
+`python main.py --dataset="parta" --gpu=2 --start-epoch=13 --epochs=13`
 
 Use the `--mle` option to compute the mean localization error. If using MLE, compile the function first:
 ```
