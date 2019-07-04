@@ -40,9 +40,6 @@ GAMMA = [1, 1, 2, 4]
 
 # Number of predefined boxes per scales (n_{mathcal{B}}).
 NUM_BOXES_PER_SCALE = 3
-
-# Loss Weights (to be read from .npy file while training)
-loss_weights = None
 ###############################################################
 
 
@@ -64,7 +61,9 @@ BOX_SIZE_BINS_NPY = np.array(BOX_SIZE_BINS)
 BOXES = np.reshape(BOX_SIZE_BINS_NPY, (4, 3))
 BOXES = BOXES[::-1]
 metrics = ['loss1', 'new_mae']
-# ----
+
+# Loss Weights (to be read from .npy file while training)
+loss_weights = None
 
 
 matplotlib.use('Agg')
@@ -622,7 +621,10 @@ def test_lsccnn(test_funcs, dataset, set_name, network, print_output=False, thre
     metrics_ = ['new_mae', 'mle', 'mse', 'loss1']
     for k in metrics_:
         metrics_test[k] = 0.0
-    loss_weights = np.ones((len(PRED_DOWNSCALE_FACTORS), NUM_BOXES_PER_SCALE+1))
+    
+    global loss_weights
+    if loss_weights is None:
+        loss_weights = np.ones((len(PRED_DOWNSCALE_FACTORS), NUM_BOXES_PER_SCALE+1))
     def test_function(img_batch, gt_batch, roi_batch):
         global test_loss
         global counter
@@ -870,6 +872,7 @@ def train_networks(network, dataset, network_functions, log_path):
                              start_epoch))
 
     # -- Main Training Loop
+    global loss_weights
     if os.path.isfile("loss_weights.npy"):
         loss_weights = np.load('loss_weights.npy')
     else:
