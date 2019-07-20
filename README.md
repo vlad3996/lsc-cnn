@@ -23,6 +23,8 @@ plt.show()
 
 ```
 
+<img src="https://github.com/vlad3996/lsc-cnn/blob/3d8887b603aec5d68adad47c51d085fe4c6de50b/download.png"/>
+
 
 This repository is a fork of the pytorch implementation for the crowd counting model, LSC-CNN, proposed in the paper - [**Locate, Size and Count: Accurately Resolving People in Dense Crowds via Detection**](https://arxiv.org/pdf/1906.07538.pdf).
 
