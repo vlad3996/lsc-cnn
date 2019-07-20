@@ -1,3 +1,4 @@
+import cv2
 import torch
 import torch.nn as nn
 import numpy as np
@@ -186,8 +187,11 @@ class LSCCNN(nn.Module):
             return main_out_rest, sub1_out_rest, sub2_out_rest, sub4_out_rest
 
     def predict_single_image(self, image, nms_thresh=0.25, thickness=2, multi_colours=True):
+        if image.shape[0] % 16 or image.shape[1] % 16:
+            image = cv2.resize(image, (image.shape[1]//16*16, image.shape[0]//16*16))
+        img_tensor = torch.from_numpy(image.transpose((2, 0, 1)).astype(np.float32)).unsqueeze(0)
         with torch.no_grad():
-            out = self.forward(torch.from_numpy(image.transpose((2, 0, 1)).astype(np.float32)).unsqueeze(0).cuda())
+            out = self.forward(img_tensor.cuda())
         out = get_upsample_output(out, self.output_downscale)
         pred_dot_map, pred_box_map = get_box_and_dot_maps(out, nms_thresh, self.BOXES)
         img_out = get_boxed_img(image, pred_box_map, pred_box_map, pred_dot_map, self.output_downscale,
