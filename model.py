@@ -194,7 +194,9 @@ class LSCCNN(nn.Module):
             out = self.forward(img_tensor.cuda())
         out = get_upsample_output(out, self.output_downscale)
         pred_dot_map, pred_box_map = get_box_and_dot_maps(out, nms_thresh, self.BOXES)
-        img_out = get_boxed_img(image, pred_box_map, pred_box_map, pred_dot_map, self.output_downscale,
-                                self.BOXES, self.BOX_SIZE_BINS, thickness=thickness, multi_colours=multi_colours)
-        return pred_dot_map, pred_box_map, img_out
+        pred_box_map_out, img_out = get_boxed_img(image, pred_box_map, pred_box_map, pred_dot_map,
+                                                  self.output_downscale,
+                                                  self.BOXES, self.BOX_SIZE_BINS, thickness=thickness,
+                                                  multi_colours=multi_colours)
+        return pred_dot_map, pred_box_map, pred_box_map_out, img_out
 
